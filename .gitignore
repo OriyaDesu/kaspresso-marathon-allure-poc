@@ -1,15 +1,99 @@
+# =========================
+# Android Studio / IntelliJ
+# =========================
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+
+# Exceptions (если нужны общие настройки проекта)
+!.idea/codeStyles
+!.idea/codeStyles/*
+!.idea/inspectionProfiles
+!.idea/inspectionProfiles/*
+!.idea/runConfigurations
+!.idea/runConfigurations/*
+
+# =========================
+# Gradle
+# =========================
+.gradle/
+**/build/
+
+# Wrapper
+!gradle/wrapper/gradle-wrapper.jar
+
+# =========================
+# Kotlin
+# =========================
+.kotlin/
+
+# =========================
+# Local config
+# =========================
 local.properties
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Android
+# =========================
+captures/
+.externalNativeBuild/
+.cxx/
+
+# APK / AAB
+*.apk
+*.ap_
+*.aab
+
+# Dex
+*.dex
+
+# =========================
+# Generated reports
+# =========================
+device-results/
+build/reports/
+
+# Marathon
+Marathon.log
+
+# Allure
+allure-results/
+allure-report/
+merged-allure-results/
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Java
+# =========================
+*.class
+
+# =========================
+# Kotlin compiler
+# =========================
+*.kotlin_module
+
+# =========================
+# Maven
+# =========================
+target/
+
+# =========================
+# VSCode
+# =========================
+.vscode/
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.swp
+*.orig
