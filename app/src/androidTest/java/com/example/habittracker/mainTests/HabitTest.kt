@@ -15,11 +15,12 @@ import com.kaspersky.components.alluresupport.withForcedAllureSupport
 import com.kaspersky.components.composesupport.config.addComposeSupport
 import com.kaspersky.kaspresso.kaspresso.Kaspresso
 import com.kaspersky.kaspresso.testcases.api.testcase.TestCase
+import io.qameta.allure.kotlin.Allure.step
 import org.junit.Rule
 import org.junit.Test
 
 class HabitTest :
-    TestCase(kaspressoBuilder = Kaspresso.Builder.withForcedAllureSupport().addComposeSupport()) {
+    TestCase(kaspressoBuilder = Kaspresso.Builder.withForcedAllureSupport(shouldRecordVideo = false).addComposeSupport()) {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
@@ -55,9 +56,11 @@ class HabitTest :
     @Test
     fun toggleHabit_changesState() {
         // клик по чекбоксу первой привычки
-        composeTestRule
-            .onNodeWithTag("habitCheckbox")
-            .onChildren().printToLog("лог")
+        step("Step 1. Выбрать фильтр") {
+            composeTestRule
+                .onNodeWithTag("habitCheckbox")
+                .onChildren().printToLog("лог")
+        }
 //            .filterToOne(hasText("surf"))
 //            .performClick().assertIsSelected()
     }
