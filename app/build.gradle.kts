@@ -2,6 +2,11 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+    }
+}
 
 android {
     namespace = "com.example.habittracker"
@@ -16,7 +21,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.kaspersky.kaspresso.runner.KaspressoRunner"
     }
 
     buildTypes {
@@ -29,8 +34,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     buildFeatures {
         compose = true
@@ -59,7 +64,5 @@ dependencies {
     // Kaspresso
     androidTestImplementation("com.kaspersky.android-components:kaspresso:1.6.1")
     androidTestImplementation("com.kaspersky.android-components:kaspresso-compose-support:1.6.1")
-    androidTestImplementation("io.qameta.allure:allure-kotlin-android:2.4.0")
-    // Allure
-    androidTestImplementation("io.qameta.allure:allure-kotlin-android:2.4.0")
+    androidTestImplementation("com.kaspersky.android-components:kaspresso-allure-support:1.6.1")
 }

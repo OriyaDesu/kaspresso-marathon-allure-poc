@@ -8,6 +8,7 @@
       </SelectionState>
       <SelectionState runConfigName="addHabit_displaysInList()">
         <option name="selectionMode" value="DROPDOWN" />
+        <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="HabitTest">
         <option name="selectionMode" value="DROPDOWN" />

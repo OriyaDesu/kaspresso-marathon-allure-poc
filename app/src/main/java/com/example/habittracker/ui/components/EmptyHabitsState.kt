@@ -12,19 +12,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.Composable
 import com.example.habittracker.ui.theme.Lime
 import com.example.habittracker.ui.theme.SmokyAqua
 import com.example.habittracker.ui.theme.Tangerine
 
+const val ADD_TASK_BUTTON = "ADD_TASK_BUTTON"
 @Composable
 fun EmptyHabitsState(
     modifier: Modifier = Modifier,
@@ -67,6 +69,7 @@ fun EmptyHabitsState(
         )
 
         Button(
+            modifier = Modifier.testTag(ADD_TASK_BUTTON),
             onClick = onAddClick,
             shape = RoundedCornerShape(18.dp),
             colors = ButtonDefaults.buttonColors(
