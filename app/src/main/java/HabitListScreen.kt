@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -58,6 +59,7 @@ import com.example.habittracker.ui.theme.StarColor
 import com.example.habittracker.ui.theme.Tangerine
 import com.example.habittracker.ui.viewModel.HabitViewModel
 import kotlinx.coroutines.delay
+const val NEW_TASK_DIALOG_TEXT_FIELD = "NEW_TASK_DIALOG_TEXT_FIELD"
 @Composable
 fun HabitListScreen(
     modifier: Modifier = Modifier,
@@ -430,7 +432,7 @@ private fun AddHabitDialog(
                 OutlinedTextField(
                     value = newHabitText,
                     onValueChange = onTextChange,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag(NEW_TASK_DIALOG_TEXT_FIELD),
                     placeholder = { Text("Например: выпить водички") },
                     singleLine = true,
                     shape = RoundedCornerShape(18.dp),
