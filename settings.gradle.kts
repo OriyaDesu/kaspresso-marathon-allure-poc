@@ -20,4 +20,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "HabitTracker"
+
 include(":app")
+include(":allure-merge")
