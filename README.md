@@ -97,6 +97,27 @@ The generated report contains:
 
 ---
 
+## 🔧 Prerequisites
+
+Before running the project, make sure the following tools are installed:
+
+- JDK 21
+- Android SDK
+- Android Emulator (API 35)
+- Marathon CLI
+- Allure CLI
+
+Verify the installation:
+
+```bash
+java -version
+adb --version
+marathon --version
+allure --version
+```
+
+---
+
 ## 🚀 Running
 
 Run the complete pipeline:
