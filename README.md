@@ -49,6 +49,30 @@ The repository consists of:
 
 ---
 
+## 📈 Reporting pipeline
+
+```text
+Kaspresso
+        │
+        ├── Steps
+        ├── Failure screenshots
+        │
+        ▼
+Device Allure Results
+        │
+        ▼
+Allure Merge
+        ▲
+        │
+Marathon
+        ├── Execution metadata
+        ├── Failure videos
+        └── Logcat
+        │
+        ▼
+Merged Allure Report
+```
+
 ## 📊 Final Allure report
 
 The generated report contains:
