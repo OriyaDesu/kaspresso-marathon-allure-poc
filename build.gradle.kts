@@ -31,28 +31,30 @@ val runMarathon by tasks.registering(Exec::class) {
         cleanMarathonResults,
         assembleMarathonApks
     )
-
     workingDir = rootProject.projectDir
     commandLine("marathon")
-
-    inputs.file(rootProject.file("Marathonfile"))
-    inputs.file(
-        rootProject.file(
-            "app/build/outputs/apk/debug/app-debug.apk"
-        )
+    isIgnoreExitValue = true
+    outputs.dir(
+        layout.buildDirectory.dir("reports/marathon")
     )
-    inputs.file(
-        rootProject.file(
-            "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
-        )
-    )
-
-    outputs.dir(marathonOutputDir)
 }
 
 tasks.register("runMarathonWithMergedAllure") {
     group = "verification"
-    description = "Runs Marathon and merges Marathon/Kaspresso Allure results"
+    description = "Runs Marathon, merges Allure results and validates test result"
 
     dependsOn(":allure-merge:run")
+
+    doLast {
+        val exitCode = runMarathon.get().executionResult
+            .get()
+            .exitValue
+
+        if (exitCode != 0) {
+            throw GradleException(
+                "Marathon tests failed with exit code $exitCode. " +
+                        "Merged Allure results were generated successfully."
+            )
+        }
+    }
 }

@@ -2,7 +2,7 @@ name: "HabitTracker tests"
 
 outputDir: "build/reports/marathon"
 
-screenRecordingPolicy: "ON_ANY"
+screenRecordingPolicy: "ON_FAILURE"
 
 analyticsTracking: false
 bugsnagReporting: false
