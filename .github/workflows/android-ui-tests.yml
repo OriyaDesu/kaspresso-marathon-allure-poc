@@ -49,6 +49,17 @@ jobs:
 
           ./marathon-0.10.4/bin/marathon --help
 
+      - name: Install Allure CLI
+        run: |
+          curl -L \
+            https://github.com/allure-framework/allure2/releases/download/2.34.1/allure-2.34.1.tgz \
+            -o allure.tgz
+
+          tar -xzf allure.tgz
+          echo "$PWD/allure-2.34.1/bin" >> "$GITHUB_PATH"
+
+          ./allure-2.34.1/bin/allure --version
+
       - name: Run UI tests
         uses: ReactiveCircus/android-emulator-runner@v2.37.0
         with:
@@ -68,6 +79,27 @@ jobs:
           script: |
             adb devices
             ./gradlew runMarathonWithMergedAllure --stacktrace
+
+      - name: Generate Allure HTML report
+        if: always()
+        run: |
+          if [ -d "build/reports/marathon/merged-allure-results" ]; then
+            allure generate \
+              build/reports/marathon/merged-allure-results \
+              --clean \
+              -o build/reports/allure-report
+          else
+            echo "Merged Allure results directory was not found"
+          fi
+
+      - name: Upload Allure HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: build/reports/allure-report
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload merged Allure results
         if: always()
