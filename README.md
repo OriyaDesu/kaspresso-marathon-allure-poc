@@ -13,8 +13,9 @@ The repository contains a simple Jetpack Compose application, native Android UI 
 - ✅ Marathon test execution
 - ✅ Unified Allure report
 - ✅ Kaspresso step reporting
-- ✅ Automatic screenshots
-- ✅ Marathon video recordings
+- ✅ Failure-only screenshots
+- ✅ Failure-only Marathon video recordings
+- ✅ Automatic Allure results merge
 - ✅ Marathon logcat collection
 
 ---
@@ -28,7 +29,11 @@ The repository contains a simple Jetpack Compose application, native Android UI 
 
 ### Merged Allure report (Kaspresso + Marathon)
 
-![Merged Allure report](https://github.com/user-attachments/assets/bfa8f932-8a47-4090-98e7-a47fd3148724)
+<img width="632" height="397" alt="Снимок экрана — 2026-07-21 в 13 33 04" src="https://github.com/user-attachments/assets/b14b3b90-7a8d-4294-846f-333f4aab72b1" />
+
+<img width="632" height="624" alt="image" src="https://github.com/user-attachments/assets/f9264f82-ee7b-4f69-9e88-90f1ebaf02c4" />
+
+
 
 
 ---
@@ -39,7 +44,7 @@ The repository consists of:
 
 - **Habit Tracker** — a simple Jetpack Compose application used as a target for UI testing.
 - **Kaspresso UI tests** — native Android UI tests with readable step-based DSL.
-- **Marathon** — parallel test execution with video recording and logcat collection.
+- **Marathon** — Android test execution with failure-only video recording, logcat collection and execution metadata.
 - **Allure Merge** — a small Kotlin utility that combines device-side Kaspresso Allure results with Marathon runner-side artifacts into a single Allure report.
 
 ---
@@ -49,8 +54,8 @@ The repository consists of:
 The generated report contains:
 
 - ✅ Kaspresso steps
-- ✅ Kaspresso screenshots
-- ✅ Marathon videos
+- ✅ Failure screenshots
+- ✅ Failure video recordings
 - ✅ Marathon logcat
 - ✅ Execution metadata
 
@@ -70,25 +75,13 @@ The generated report contains:
 
 ## 🚀 Running
 
-Build the application and test APKs
+Run the complete pipeline:
 
 ```bash
-./gradlew app:assembleDebug app:assembleDebugAndroidTest
+./gradlew runMarathonWithMergedAllure
 ```
 
-Run tests with Marathon
-
-```bash
-marathon
-```
-
-Merge Allure results
-
-```bash
-./gradlew :allure-merge:run
-```
-
-Open the report
+Open the report:
 
 ```bash
 allure serve build/reports/marathon/merged-allure-results
@@ -109,6 +102,4 @@ allure serve build/reports/marathon/merged-allure-results
 ---
 
 ## 💡 Motivation
-Kaspresso and Marathon generate different Allure results.
-Kaspresso provides rich step-based reporting and screenshots, while Marathon generates execution metadata, videos, and logcat.
-This project demonstrates one approach to combining both outputs into a single Allure report while preserving the strengths of each tool.
+Kaspresso and Marathon generate complementary Allure artifacts. Kaspresso produces detailed step-based reports, while Marathon provides execution metadata, screen recordings and logcat. This project demonstrates how these artifacts can be merged into a single Allure report while avoiding redundant attachments by keeping screenshots and videos only for failed tests.
