@@ -40,7 +40,7 @@ jobs:
           unzip marathon.zip
           echo "$PWD/marathon-0.10.4/bin" >> "$GITHUB_PATH"
 
-          ./marathon-0.10.4/bin/marathon --version
+          ./marathon-0.10.4/bin/marathon --help
 
       - name: Run UI tests
         uses: ReactiveCircus/android-emulator-runner@v2
