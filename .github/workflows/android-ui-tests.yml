@@ -33,9 +33,14 @@ jobs:
 
       - name: Install Marathon CLI
         run: |
-          brew tap malinskiy/tap
-          brew install malinskiy/tap/marathon
-          marathon --version
+          curl -L \
+            https://github.com/MarathonLabs/marathon/releases/download/0.10.4/marathon-0.10.4.zip \
+            -o marathon.zip
+
+          unzip marathon.zip
+          echo "$PWD/marathon-0.10.4/bin" >> "$GITHUB_PATH"
+
+          ./marathon-0.10.4/bin/marathon --version
 
       - name: Run UI tests
         uses: ReactiveCircus/android-emulator-runner@v2
