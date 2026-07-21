@@ -6,7 +6,7 @@ screenRecordingPolicy: "ON_FAILURE"
 
 analyticsTracking: false
 bugsnagReporting: false
-debug: true
+debug: false
 
 vendorConfiguration:
   type: "Android"
