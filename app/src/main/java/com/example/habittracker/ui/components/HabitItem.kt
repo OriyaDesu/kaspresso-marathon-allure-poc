@@ -2,7 +2,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +17,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -34,14 +32,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.habittracker.domain.Habit
 import com.example.habittracker.ui.theme.CheckGreen
-import com.example.habittracker.ui.theme.DeleteColor
-import com.example.habittracker.ui.theme.Lime
-import com.example.habittracker.ui.theme.Mantis
 import com.example.habittracker.ui.theme.SmokyAqua
-import com.example.habittracker.ui.theme.Tangerine
 import com.example.habittracker.ui.theme.TangerineMuted
 import com.example.habittracker.ui.theme.TextDark
 
+const val FILTER_CHECKBOX = "FILTER_CHECKBOX"
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HabitItem(
@@ -113,7 +108,7 @@ fun HabitItem(
                             .clickable {
                                 onCheckedChange(!habit.isDone)
                             }
-                            .testTag("habitCheckbox"),
+                            .testTag(FILTER_CHECKBOX),
                         contentAlignment = Alignment.Center
                     ) {
                         if (habit.isDone) {

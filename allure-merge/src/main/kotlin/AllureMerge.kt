@@ -1,4 +1,3 @@
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -19,136 +18,231 @@ private val json = Json {
     ignoreUnknownKeys = true
 }
 
+private data class TestIdentifier(
+    val testClass: String,
+    val testMethod: String
+)
+
+private data class AllureResult(
+    val path: Path,
+    val json: JsonObject,
+    val identifier: TestIdentifier,
+    val start: Long
+)
+
 fun main() {
     val rootDir = Path.of(System.getProperty("user.dir"))
-    val marathonDir = rootDir.resolve("build/reports/marathon/allure-results")
-    val deviceDir = rootDir.resolve("build/reports/marathon/device-files/allure-results")
-    val mergedDir = rootDir.resolve("build/reports/marathon/merged-allure-results")
 
-    require(Files.exists(marathonDir)) {
+    val marathonDir =
+        rootDir.resolve("build/reports/marathon/allure-results")
+
+    val deviceDir =
+        rootDir.resolve(
+            "build/reports/marathon/device-files/allure-results"
+        )
+
+    val mergedDir =
+        rootDir.resolve(
+            "build/reports/marathon/merged-allure-results"
+        )
+
+    require(Files.isDirectory(marathonDir)) {
         "Marathon results not found: $marathonDir"
     }
-    require(Files.exists(deviceDir)) {
+
+    require(Files.isDirectory(deviceDir)) {
         "Device results not found: $deviceDir"
     }
 
-    if (Files.exists(mergedDir)) {
-        mergedDir.toFile().deleteRecursively()
-    }
-    mergedDir.createDirectories()
+    recreateDirectory(mergedDir)
 
-    val deviceResultsByFullName = deviceDir
-        .listDirectoryEntries("*-result.json")
-        .associateBy { path ->
-            readJson(path)
-                .getValue("fullName")
-                .jsonPrimitive
-                .content
+    val marathonResults = loadResults(marathonDir)
+    val deviceResults = loadResults(deviceDir)
+
+    val marathonGroups = marathonResults
+        .groupBy(AllureResult::identifier)
+
+    val deviceGroups = deviceResults
+        .groupBy(AllureResult::identifier)
+
+    var mergedCount = 0
+    var unmatchedCount = 0
+
+    marathonGroups.forEach { (identifier, serverResults) ->
+        val sortedServerResults = serverResults.sortedBy(AllureResult::start)
+
+        val sortedDeviceResults = deviceGroups[identifier]
+            .orEmpty()
+            .sortedBy(AllureResult::start)
+
+        if (sortedServerResults.size != sortedDeviceResults.size) {
+            println(
+                "Result count mismatch for $identifier: " +
+                        "marathon=${sortedServerResults.size}, " +
+                        "device=${sortedDeviceResults.size}"
+            )
         }
 
-    marathonDir
-        .listDirectoryEntries("*-result.json")
-        .forEach { marathonResultPath ->
-            val marathonResult = readJson(marathonResultPath)
-            val fullName = marathonResult
-                .getValue("fullName")
-                .jsonPrimitive
-                .content
+        sortedServerResults.forEachIndexed { index, marathonResult ->
+            val deviceResult = sortedDeviceResults.getOrNull(index)
 
-            val deviceResultPath = deviceResultsByFullName[fullName]
-            val rewrittenMarathonAttachments = rewriteAndCopyAttachments(
-                attachments = marathonResult["attachments"] as? JsonArray
-                    ?: JsonArray(emptyList()),
-                mergedDir = mergedDir
-            )
-
-            val mergedResult = if (deviceResultPath != null) {
-                val deviceResult = readJson(deviceResultPath)
-
-                val deviceAttachments =
-                    deviceResult["attachments"] as? JsonArray
-                        ?: JsonArray(emptyList())
-
-                JsonObject(
-                    marathonResult.toMutableMap().apply {
-                        this["steps"] =
-                            deviceResult["steps"] ?: JsonArray(emptyList())
-
-                        this["attachments"] = JsonArray(
-                            rewrittenMarathonAttachments + deviceAttachments
-                        )
-                    }
-                )
-            } else {
-                println("Device result not found for: $fullName")
-
-                JsonObject(
-                    marathonResult.toMutableMap().apply {
-                        this["attachments"] = rewrittenMarathonAttachments
-                    }
+            if (deviceResult == null) {
+                unmatchedCount++
+                println(
+                    "Device result not found for " +
+                            "$identifier, attempt=${index + 1}"
                 )
             }
 
+            val mergedResult = mergeResults(
+                marathonResult = marathonResult.json,
+                deviceResult = deviceResult?.json,
+                mergedDir = mergedDir
+            )
+
             Files.writeString(
-                mergedDir.resolve(marathonResultPath.name),
-                json.encodeToString(mergedResult)
+                mergedDir.resolve(marathonResult.path.name),
+                json.encodeToString(
+                    JsonObject.serializer(),
+                    mergedResult
+                )
+            )
+
+            mergedCount++
+        }
+    }
+
+    copyDeviceArtifacts(
+        sourceDir = deviceDir,
+        targetDir = mergedDir
+    )
+
+    copyServiceFiles(
+        sourceDir = marathonDir,
+        targetDir = mergedDir,
+        overwrite = true
+    )
+
+    copyServiceFiles(
+        sourceDir = deviceDir,
+        targetDir = mergedDir,
+        overwrite = false
+    )
+
+    println()
+    println("Merged Allure results created: $mergedDir")
+    println("Merged results: $mergedCount")
+    println("Unmatched Marathon results: $unmatchedCount")
+}
+
+private fun loadResults(directory: Path): List<AllureResult> =
+    directory
+        .listDirectoryEntries("*-result.json")
+        .map { path ->
+            val resultJson = readJson(path)
+
+            AllureResult(
+                path = path,
+                json = resultJson,
+                identifier = resultJson.toTestIdentifier(),
+                start = resultJson.longValue("start") ?: 0L
             )
         }
 
-    copyDeviceArtifacts(deviceDir, mergedDir)
-    copyServiceFiles(marathonDir, mergedDir)
-
-    println("Merged Allure results created:")
-    println(mergedDir)
-}
-
-private fun rewriteAndCopyAttachments(
-    attachments: JsonArray,
+private fun mergeResults(
+    marathonResult: JsonObject,
+    deviceResult: JsonObject?,
     mergedDir: Path
-): JsonArray {
-    return JsonArray(
-        attachments.map { attachmentElement ->
-            val attachment = attachmentElement.jsonObject
-            val source = attachment["source"]?.jsonPrimitive?.content
+): JsonObject {
+    val rewrittenMarathonAttachments =
+        rewriteAndCopyMarathonAttachments(
+            attachments = marathonResult.arrayValue("attachments"),
+            mergedDir = mergedDir
+        )
 
-            if (source.isNullOrBlank()) {
-                attachment
-            } else {
-                val sourcePath = Path.of(source)
+    if (deviceResult == null) {
+        return JsonObject(
+            marathonResult.toMutableMap().apply {
+                this["attachments"] = rewrittenMarathonAttachments
+            }
+        )
+    }
 
-                if (!Files.exists(sourcePath)) {
-                    println("Marathon attachment not found: $sourcePath")
-                    attachment
-                } else {
-                    val extension = sourcePath.fileName
-                        .toString()
-                        .substringAfterLast(".", missingDelimiterValue = "")
+    val deviceAttachments =
+        deviceResult.arrayValue("attachments")
 
-                    val targetFileName = buildString {
-                        append(UUID.randomUUID())
-                        append("-attachment")
-                        if (extension.isNotBlank()) {
-                            append(".")
-                            append(extension)
-                        }
-                    }
-
-                    Files.copy(
-                        sourcePath,
-                        mergedDir.resolve(targetFileName),
-                        StandardCopyOption.REPLACE_EXISTING
-                    )
-
-                    JsonObject(
-                        attachment.toMutableMap().apply {
-                            this["source"] = JsonPrimitive(targetFileName)
-                        }
-                    )
-                }
+    return JsonObject(
+        marathonResult.toMutableMap().apply {
+            this["steps"] =
+                deviceResult["steps"] ?: JsonArray(emptyList())
+            this["attachments"] = JsonArray(
+                rewrittenMarathonAttachments + deviceAttachments
+            )
+            if (
+                this["statusDetails"] == null &&
+                deviceResult["statusDetails"] != null
+            ) {
+                this["statusDetails"] =
+                    deviceResult.getValue("statusDetails")
             }
         }
     )
 }
+
+private fun rewriteAndCopyMarathonAttachments(
+    attachments: JsonArray,
+    mergedDir: Path
+): JsonArray =
+    JsonArray(
+        attachments.map { element ->
+            val attachment = element.jsonObject
+            val source = attachment.stringValue("source")
+
+            if (source.isNullOrBlank()) {
+                return@map attachment
+            }
+
+            val sourcePath = runCatching {
+                Path.of(source)
+            }.getOrNull()
+
+            if (
+                sourcePath == null ||
+                !Files.isRegularFile(sourcePath)
+            ) {
+                println("Marathon attachment not found: $source")
+                return@map attachment
+            }
+
+            val originalName = sourcePath.fileName.toString()
+            val extension = originalName.substringAfterLast(
+                delimiter = ".",
+                missingDelimiterValue = ""
+            )
+
+            val targetName = buildString {
+                append(UUID.randomUUID())
+                append("-attachment")
+
+                if (extension.isNotBlank()) {
+                    append(".")
+                    append(extension)
+                }
+            }
+
+            Files.copy(
+                sourcePath,
+                mergedDir.resolve(targetName),
+                StandardCopyOption.REPLACE_EXISTING
+            )
+
+            JsonObject(
+                attachment.toMutableMap().apply {
+                    this["source"] = JsonPrimitive(targetName)
+                }
+            )
+        }
+    )
 
 private fun copyDeviceArtifacts(
     sourceDir: Path,
@@ -157,7 +251,8 @@ private fun copyDeviceArtifacts(
     sourceDir.listDirectoryEntries().forEach { source ->
         if (
             source.isRegularFile() &&
-            !source.name.endsWith("-result.json")
+            !source.name.endsWith("-result.json") &&
+            !isServiceFile(source.name)
         ) {
             Files.copy(
                 source,
@@ -170,24 +265,89 @@ private fun copyDeviceArtifacts(
 
 private fun copyServiceFiles(
     sourceDir: Path,
-    targetDir: Path
+    targetDir: Path,
+    overwrite: Boolean
 ) {
-    listOf(
-        "environment.xml",
-        "categories.json",
-        "executor.json"
-    ).forEach { fileName ->
-        val source = sourceDir.resolve(fileName)
-
-        if (Files.exists(source)) {
-            Files.copy(
-                source,
-                targetDir.resolve(fileName),
-                StandardCopyOption.REPLACE_EXISTING
-            )
+    sourceDir.listDirectoryEntries().forEach { source ->
+        if (!source.isRegularFile() || !isServiceFile(source.name)) {
+            return@forEach
         }
+
+        val target = targetDir.resolve(source.name)
+
+        if (!overwrite && Files.exists(target)) {
+            return@forEach
+        }
+
+        Files.copy(
+            source,
+            target,
+            StandardCopyOption.REPLACE_EXISTING
+        )
     }
 }
 
+private fun isServiceFile(fileName: String): Boolean =
+    fileName.endsWith(".xml") ||
+            fileName.endsWith(".properties") ||
+            fileName == "categories.json" ||
+            fileName == "executor.json"
+
+private fun JsonObject.toTestIdentifier(): TestIdentifier {
+    val labels = arrayValue("labels")
+        .mapNotNull { it as? JsonObject }
+
+    val testClass = labels
+        .firstOrNull {
+            it.stringValue("name") == "testClass"
+        }
+        ?.stringValue("value")
+
+    val testMethod = labels
+        .firstOrNull {
+            it.stringValue("name") == "testMethod"
+        }
+        ?.stringValue("value")
+
+    if (!testClass.isNullOrBlank() && !testMethod.isNullOrBlank()) {
+        return TestIdentifier(
+            testClass = testClass,
+            testMethod = testMethod
+        )
+    }
+
+    val fullName = stringValue("fullName")
+        ?: error("Result has neither test labels nor fullName")
+
+    return TestIdentifier(
+        testClass = fullName.substringBeforeLast(
+            delimiter = ".",
+            missingDelimiterValue = fullName
+        ),
+        testMethod = fullName.substringAfterLast(".")
+    )
+}
+
+private fun recreateDirectory(directory: Path) {
+    if (Files.exists(directory)) {
+        directory.toFile().deleteRecursively()
+    }
+
+    directory.createDirectories()
+}
+
 private fun readJson(path: Path): JsonObject =
-    json.parseToJsonElement(Files.readString(path)).jsonObject
+    json.parseToJsonElement(
+        Files.readString(path)
+    ).jsonObject
+
+private fun JsonObject.arrayValue(name: String): JsonArray =
+    this[name] as? JsonArray ?: JsonArray(emptyList())
+
+private fun JsonObject.stringValue(name: String): String? =
+    this[name]
+        ?.runCatching { jsonPrimitive.content }
+        ?.getOrNull()
+
+private fun JsonObject.longValue(name: String): Long? =
+    stringValue(name)?.toLongOrNull()
