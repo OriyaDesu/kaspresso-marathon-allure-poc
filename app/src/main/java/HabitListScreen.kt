@@ -60,6 +60,10 @@ import com.example.habittracker.ui.theme.Tangerine
 import com.example.habittracker.ui.viewModel.HabitViewModel
 import kotlinx.coroutines.delay
 const val NEW_TASK_DIALOG_TEXT_FIELD = "NEW_TASK_DIALOG_TEXT_FIELD"
+const val NEW_CATEGORY_CHIP_TEXT_FIELD = "NEW_CATEGORY_CHIP_TEXT_FIELD"
+const val FILTER_CHIPS_LAZY_ROW = "FILTER_CHIPS_LAZY_ROW"
+const val FILTER_CHIP = "FILTER_CHIP"
+const val ADD_CATEGORY_CHIP = "ADD_CATEGORY_CHIP"
 @Composable
 fun HabitListScreen(
     modifier: Modifier = Modifier,
@@ -216,6 +220,7 @@ fun HabitListScreen(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         OutlinedTextField(
+                            modifier = Modifier.testTag(NEW_CATEGORY_CHIP_TEXT_FIELD),
                             value = newCategoryText,
                             onValueChange = { newCategoryText = it },
                             placeholder = { Text("Например: Хобби") }
@@ -356,12 +361,15 @@ private fun CategoryChips(
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .testTag(FILTER_CHIPS_LAZY_ROW),
+
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(end = 16.dp)
     ) {
         items(categories) { category ->
             FilterChip(
+                modifier = Modifier.testTag("$FILTER_CHIP-$category"),
                 selected = selectedCategory == category,
                 onClick = { onCategorySelected(category) },
                 label = {
@@ -383,6 +391,7 @@ private fun CategoryChips(
         }
         item {
             AssistChip(
+                modifier = Modifier.testTag(ADD_CATEGORY_CHIP),
                 onClick = onAddCategoryClick,
                 label = { Text("+") }
             )
